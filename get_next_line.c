@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define BUFF_SIZE 2
+#define BUFF_SIZE 22
 
 typedef struct s_list {
     void *content;
@@ -107,27 +107,27 @@ int find_n(char *buf, int i) {
     return (-1);
 }
 
-t_list *find_fd_list(t_list *lst, int fd) {
+t_list *find_fd_list(t_list **lst, int fd) {
     t_list *temp_lst;
     t_list *temp;
 
-    temp_lst = lst;
-    while (temp_lst) {
+    temp_lst = *lst;
+    while (temp_lst != NULL) {
         if (temp_lst->content_size == fd)
             return (temp_lst);
         temp_lst = temp_lst->next;
     }
-    if (!(temp = (t_list*) malloc(sizeof (t_list))))
+    if (!(temp = (t_list*) malloc(sizeof(t_list))))
         return (NULL);
-    if (!(temp->content = (char*) malloc(1)))
-        return (NULL);
-
-    *((char*) temp->content) = 0;
+    temp->content = NULL;
     temp->content_size = fd;
     temp->next = NULL;
-    if (!lst)
-        return (lst = temp);
-    temp_lst = lst;
+    if (!*lst)
+    {
+        *lst = temp;
+        return (*lst);
+    }
+    temp_lst = *lst;
     while (temp_lst->next)
         temp_lst = temp_lst->next;
     temp_lst->next = temp;
@@ -140,26 +140,23 @@ int read_str(int fd, t_list *lst, char **line, char *buf) {
     char *str;
 
 
-    if ((r = read(fd, buf, BUFF_SIZE)) == -1)
-        return (-1);
-
-    while ((pos = find_n(buf, r)) == -1) {
-
-        if (lst->content == NULL) {
-            lst->content = ft_strsub(buf, 0, BUFF_SIZE);
-        } else {
-            if (!(lst->content = ft_strjoin(lst->content, buf)))
-                return (-1);
-        }
+    if (lst->content == NULL) {
         if ((r = read(fd, buf, BUFF_SIZE)) == -1)
+            return (-1);
+        lst->content = ft_strsub(buf, 0, BUFF_SIZE);
+    }
+    while ((pos = find_n(lst->content, ft_strlen(lst->content))) == -1) {
+        if ((r = read(fd, buf, BUFF_SIZE)) == -1)
+            return (-1);
+        if (!(lst->content = ft_strjoin(lst->content, buf)))
             return (-1);
     }
     if (pos == -2) {
-        *line = ft_strjoin(lst->content, ft_strsub(buf, 0, r));
+        *line = ft_strjoin("", lst->content);
         return (0);
     }
-    *line = ft_strjoin(lst->content, ft_strsub(buf, 0, pos));
-    lst->content = ft_strsub(buf, pos, BUFF_SIZE - pos);
+    *line = ft_strsub(lst->content, 0, pos);
+    lst->content = ft_strsub(lst->content, pos + 1, BUFF_SIZE - pos - 1);
     return 1;
 }
 
@@ -173,12 +170,11 @@ int get_next_line(const int fd, char **line) {
 
     if (fd < 0 || BUFF_SIZE < 1)
         return (-1);
-    if (!(t = find_fd_list(lst, fd)))
+    if (!(t = find_fd_list(&lst, fd)))
         return (-1);
     if (!(buf = (char*) malloc(BUFF_SIZE + 1)))
         return (-1);
     buf[BUFF_SIZE] = 0;
-
     return (read_str(fd, t, line, buf));
 
 }
