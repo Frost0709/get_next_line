@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define BUFF_SIZE 100
+#define BUFF_SIZE 1
 
 typedef struct s_list {
     void *content;
@@ -92,18 +92,15 @@ void ft_clear(t_list *lst) {
     }
 }
 
-int find_n(char *buf, int i) {
-    int k;
+long find_n(char *buf, int i) {
+    long k;
 
     k = 0;
     while (k < i) {
         if (buf[k] == '\n')
             return (k);
-        if (buf[k] == '\0')
-            return (-2);
         ++k;
     }
-
     return (-1);
 }
 
@@ -120,7 +117,9 @@ t_list *find_fd_list(t_list **lst, int fd) {
     }
     if (!(temp = (t_list*) malloc(sizeof(t_list))))
         return (NULL);
-    temp->content = NULL;
+    if (!(temp->content = (char*) malloc(1)))
+        return (NULL);
+    *((char*)temp->content) = 0;
     temp->content_size = fd;
     temp->next = NULL;
     if (!*lst) 
@@ -134,28 +133,29 @@ t_list *find_fd_list(t_list **lst, int fd) {
 
 int read_str(int fd, t_list *lst, char **line, char *buf) {
     int r;
-    int pos;
+    long p;
 
-    if (lst->content == NULL) {
+    p = -1;
+    r = -1;
+    while (p == -1 & r)
+    {
         r = read(fd, buf, BUFF_SIZE);
-            if( r == 0 || r == -1)
-                return (!r ? 0 : -1);
-        lst->content = ft_strsub(buf, 0, BUFF_SIZE);
-    }
-    while ((pos = find_n(lst->content, ft_strlen(lst->content) + 1)) == -1) {
-        if (!(r = read(fd, buf, BUFF_SIZE)) == -1)
-            return (-1);
+        if (*((char*)lst->content) == 0 && r <= 0)
+            return (!r ? 0 : -1);
         if (!(lst->content = ft_strjoin(lst->content, buf)))
             return (-1);
-    }
-  
-    if (pos == -2) {
-        *line = ft_strjoin("", lst->content);
-        return (0);
-    }
-    *line = ft_strsub(lst->content, 0, pos);
-    lst->content = ft_strsub(lst->content, pos + 1, ft_strlen(lst->content) - pos);
-    return 1;
+        p = find_n(lst->content, ft_strlen(lst->content));
+        if (r < BUFF_SIZE && p == -1)
+        {
+            if(!(*line = ft_strsub(lst->content, 0, ft_strlen(lst->content))))
+                return (-1);
+            *((char*)lst->content) = 0;
+            return (1);
+        }
+    } 
+    *line = ft_strsub(lst->content, 0, p);
+    lst->content = ft_strsub(lst->content, p + 1, ft_strlen(lst->content) - p);
+    return (1);
 }
 
 int get_next_line(const int fd, char **line) {
@@ -184,10 +184,8 @@ int main(int argc, char** argv) {
     while((i = get_next_line(fd, &line)))
     {
         printf("%d  %d  :::%s\n", ++k, i, line);
-    }
-    
-
-    close(fd);
+    } 
+   
     return (EXIT_SUCCESS);
 }
 
