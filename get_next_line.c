@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define BUFF_SIZE 22
+#define BUFF_SIZE 100
 
 typedef struct s_list {
     void *content;
@@ -112,7 +112,8 @@ t_list *find_fd_list(t_list **lst, int fd) {
     t_list *temp;
 
     temp_lst = *lst;
-    while (temp_lst != NULL) {
+    while (temp_lst != NULL)
+    {
         if (temp_lst->content_size == fd)
             return (temp_lst);
         temp_lst = temp_lst->next;
@@ -122,11 +123,8 @@ t_list *find_fd_list(t_list **lst, int fd) {
     temp->content = NULL;
     temp->content_size = fd;
     temp->next = NULL;
-    if (!*lst)
-    {
-        *lst = temp;
-        return (*lst);
-    }
+    if (!*lst) 
+        return (*lst = temp);
     temp_lst = *lst;
     while (temp_lst->next)
         temp_lst = temp_lst->next;
@@ -137,17 +135,17 @@ t_list *find_fd_list(t_list **lst, int fd) {
 int read_str(int fd, t_list *lst, char **line, char *buf) {
     int r;
     int pos;
-    char *str;
-
 
     if (lst->content == NULL) {
-        if ((r = read(fd, buf, BUFF_SIZE)) == -1)
-            return (-1);
+        r = read(fd, buf, BUFF_SIZE);
+            if( r == 0 || r == -1)
+                return (!r ? 0 : -1);
         lst->content = ft_strsub(buf, 0, BUFF_SIZE);
     }
     while ((pos = find_n(lst->content, ft_strlen(lst->content))) == -1) {
-        if ((r = read(fd, buf, BUFF_SIZE)) == -1)
-            return (-1);
+        r = read(fd, buf, BUFF_SIZE);
+        if ( r == 0 || r == -1)
+                return (!r ? 0 : -1);
         if (!(lst->content = ft_strjoin(lst->content, buf)))
             return (-1);
     }
@@ -155,8 +153,10 @@ int read_str(int fd, t_list *lst, char **line, char *buf) {
         *line = ft_strjoin("", lst->content);
         return (0);
     }
+   // printf("position %d in value %s\n", pos, lst->content);
     *line = ft_strsub(lst->content, 0, pos);
-    lst->content = ft_strsub(lst->content, pos + 1, BUFF_SIZE - pos - 1);
+    //printf("===%s====\n", lst->content);
+    lst->content = ft_strsub(lst->content, pos + 1, ft_strlen(lst->content) - pos);
     return 1;
 }
 
@@ -164,9 +164,6 @@ int get_next_line(const int fd, char **line) {
     static t_list *lst;
     t_list *t;
     char *buf;
-    char *str;
-    int r;
-    size_t pos;
 
     if (fd < 0 || BUFF_SIZE < 1)
         return (-1);
@@ -185,20 +182,12 @@ int main(int argc, char** argv) {
     int i;
     int fd = open("C:/Users/Ivan/Desktop/t.txt", 0);
 
-    i = get_next_line(fd, &line);
-    printf("1  %d  :::%s\n", i, line);
-    i = get_next_line(fd, &line);
-    printf("2  %d  :::%s\n", i, line);
-    i = get_next_line(fd, &line);
-    printf("3  %d  :::%s\n", i, line);
-    i = get_next_line(fd, &line);
-    printf("4  %d  :::%s\n", i, line);
-    i = get_next_line(fd, &line);
-    printf("5  %d  :::%s\n", i, line);
-    i = get_next_line(fd, &line);
-    printf("6  %d  :::%s\n", i, line);
-    i = get_next_line(fd, &line);
-    printf("7  %d  :::%s\n", i, line);
+    int k = 0;
+    while((i = get_next_line(fd, &line)))
+    {
+        printf("%d  %d  :::%s\n", ++k, i, line);
+    }
+    
 
     close(fd);
     return (EXIT_SUCCESS);
