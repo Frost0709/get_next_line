@@ -142,20 +142,18 @@ int read_str(int fd, t_list *lst, char **line, char *buf) {
                 return (!r ? 0 : -1);
         lst->content = ft_strsub(buf, 0, BUFF_SIZE);
     }
-    while ((pos = find_n(lst->content, ft_strlen(lst->content))) == -1) {
-        r = read(fd, buf, BUFF_SIZE);
-        if ( r == 0 || r == -1)
-                return (!r ? 0 : -1);
+    while ((pos = find_n(lst->content, ft_strlen(lst->content) + 1)) == -1) {
+        if (!(r = read(fd, buf, BUFF_SIZE)) == -1)
+            return (-1);
         if (!(lst->content = ft_strjoin(lst->content, buf)))
             return (-1);
     }
+  
     if (pos == -2) {
         *line = ft_strjoin("", lst->content);
         return (0);
     }
-   // printf("position %d in value %s\n", pos, lst->content);
     *line = ft_strsub(lst->content, 0, pos);
-    //printf("===%s====\n", lst->content);
     lst->content = ft_strsub(lst->content, pos + 1, ft_strlen(lst->content) - pos);
     return 1;
 }
