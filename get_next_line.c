@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define BUFF_SIZE 7
+#define BUFF_SIZE 12
 
 typedef struct s_list {
     void *content;
@@ -79,12 +79,15 @@ char *ft_strsub(char const *s, unsigned int start, size_t len) {
     return (result);
 }
 
-void ft_clear(t_list *lst) {
+void clear_all(t_list **lst, char **b) {
     t_list *tmp;
-
-    while (lst) {
-        tmp = lst;
-        lst = lst->next;
+    
+    free(*b);
+    *b == NULL;
+    while (*lst) {
+        tmp = *lst;
+        *lst = (*lst)->next;
+        close(tmp->content_size);
         free(tmp->content);
         tmp->content = NULL;
         free(tmp);
@@ -96,8 +99,6 @@ long find_n(char *buf, int i) {
     long k;
 
     k = 0;
-    if (!buf)
-        return (-1);
     while (k < i) {
         if (buf[k] == '\n')
             return (k);
@@ -130,52 +131,57 @@ t_list *find_fd_list(t_list **lst, int fd) {
     return (temp);
 }
 
-int read_str(int fd, t_list *l, char **line, char *buf) {
-    long p;
-    int flag;
-    int r;
+int read_str(int fd, t_list *l, char **line, char *b, int r) {
+    long p; 
+    char *t;
 
-    r = 1;
     p = -2;
-    flag = 1;
-    if (!l->content) {
-        if ((r = read(fd, buf, BUFF_SIZE)) <= 0)
-            return (!r ? 0 : -1);
-        if (!(l->content = ft_strsub(buf, 0, r)))
-            return (-1);
-    }
-    while (flag) {
-        flag = 0;
-        if (r && (p = find_n(l->content, ft_strlen(l->content))) == -1) {
-            flag = 1;
-            if ((r = read(fd, buf, BUFF_SIZE)) == -1)
+    while (r && (p = find_n(l->content, ft_strlen(l->content))) == -1) {   
+            if ((r = read(fd, b, BUFF_SIZE)) == -1)
                 return (-1);
-            l->content = ft_strjoin(l->content, ft_strsub(buf, 0 , r));
-        }
+            if (!(t = ft_strsub(b, 0 , r)))
+                return (-1);
+            if (!(l->content = ft_strjoin(l->content, t)))
+            {
+                free(t);
+                return (-1);
+            }
     }
     if (p == -1) {
         *line = l->content;
         l->content = NULL;
     } else {
-        *line = ft_strsub(l->content, 0, p);
-        l->content = ft_strsub(l->content, p + 1, ft_strlen(l->content) - p - 1);
+        if (!(*line = ft_strsub(l->content, 0, p)))
+            return (-1);
+        if (!(l->content = ft_strsub(l->content, p + 1, ft_strlen(l->content) - p - 1)))
+            return (-1);
     }
     return (1);
 }
 
 int get_next_line(const int fd, char **line) {
     static t_list *lst;
-    t_list *t;
-    char *buf;
+    t_list *l;
+    char *b;
     int r;
 
-    if (fd < 0 || BUFF_SIZE < 1 || !(t = find_fd_list(&lst, fd)))
+    r = 1;
+    if (fd < 0 || BUFF_SIZE < 1 || !(l = find_fd_list(&lst, fd)))
         return (-1);
-    if (!(buf = (char*) malloc(BUFF_SIZE + 1)))
+    if (!(b = (char*) malloc(BUFF_SIZE + 1)))
         return (-1);
-    buf[BUFF_SIZE] = 0;
-    return (read_str(fd, t, line, buf));
-
+    b[BUFF_SIZE] = 0; 
+    if (!l->content) {
+        if ((r = read(fd, b, BUFF_SIZE)) <= 0)
+            return (!r ? 0 : -1);
+        if (!(l->content = ft_strsub(b, 0, r)))
+            return (-1);
+    }  
+    if ((r = read_str(fd, l, line, b, r)) == -1)
+        clear_all(&lst, &b);
+    free(b);
+    b = NULL;
+    return (r);
 }
 
 int main(int argc, char** argv) {
