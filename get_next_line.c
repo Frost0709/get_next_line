@@ -6,7 +6,7 @@
 /*   By: mbarre <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/04 22:11:47 by mbarre            #+#    #+#             */
-/*   Updated: 2019/05/04 23:12:01 by mbarre           ###   ########.fr       */
+/*   Updated: 2019/05/04 23:47:29 by mbarre           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,9 +63,9 @@ int		result_str(long p, t_list *l, char **line)
 		return (1);
 	}
 	if (!(*line = ft_strsub(l->content, 0, p)))
-	{		
+	{
 		free(l->content);
-		l-content = NULL;
+		l->content = NULL;
 		return (-1);
 	}
 	t = l->content;
@@ -108,21 +108,23 @@ int		get_next_line(const int fd, char **line)
 	char			*b;
 	int				r;
 
-	r = 1;
 	if (fd < 0 || BUFF_SIZE < 1 || !(l = find_fd_list(&lst, fd)))
 		return (-1);
 	if (!(b = (char*)malloc(BUFF_SIZE + 1)))
 		return (-1);
 	b[BUFF_SIZE] = 0;
-	if (!l->content || *((char*)l->content) == 0)
+	if (!l->content || !*((char*)l->content))
 	{
-		if ((r = read(fd, b, BUFF_SIZE)) <= 0)
-			return (!r ? 0 : -1);
-		if (!(l->content = ft_strsub(b, 0, r)))
+		r = read(fd, b, BUFF_SIZE);
+		if (r <= 0 || !(l->content = ft_strsub(b, 0, r)))
+		{
+			free(b);
+			if (!r)
+				return (0);
 			return (-1);
+		}
 	}
 	r = read_str(fd, l, line, b);
 	free(b);
-	b = NULL;
 	return (r);
 }
