@@ -108,9 +108,8 @@ int		get_next_line(const int fd, char **line)
 
 	if (fd < 0 || BUFF_SIZE < 1 || !(l = find_fd_list(&lst, fd)))
 		return (-1);
-	if (!(b = (char*)malloc(BUFF_SIZE + 1)))
+	if (!(b = (char*)ft_memalloc(BUFF_SIZE + 1)))
 		return (-1);
-	b[BUFF_SIZE] = 0;
 	if (!l->content || !*((char*)l->content))
 	{
 		r = read(fd, b, BUFF_SIZE);
