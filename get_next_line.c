@@ -71,9 +71,7 @@ int		result_str(long p, t_list *l, char **line)
 	t = l->content;
 	l->content = ft_strsub(l->content, p + 1, ft_strlen(l->content) - p - 1);
 	free(t);
-	if (!l->content)
-		return (-1);
-	return (1);
+	return (!l->content ? -1 : 1);
 }
 
 int		read_str(int fd, t_list *l, char **line, char *b)
@@ -119,9 +117,7 @@ int		get_next_line(const int fd, char **line)
 		if (r <= 0 || !(l->content = ft_strsub(b, 0, r)))
 		{
 			free(b);
-			if (!r)
-				return (0);
-			return (-1);
+			return (!r ? 0 : -1);
 		}
 	}
 	r = read_str(fd, l, line, b);
