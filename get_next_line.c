@@ -63,11 +63,7 @@ int		result_str(long p, t_list *l, char **line)
 		return (1);
 	}
 	if (!(*line = ft_strsub(l->content, 0, p)))
-	{
-		free(l->content);
-		l->content = NULL;
 		return (-1);
-	}
 	t = l->content;
 	l->content = ft_strsub(l->content, p + 1, ft_strlen(l->content) - p - 1);
 	free(t);
@@ -78,24 +74,25 @@ int		read_str(int fd, t_list *l, char **line, char *b)
 {
 	int		r;
 	long	p;
-	char	*t;
-	char	*t2;
+	char	*t[2];
 
-	p = -2;
 	r = -2;
+	p = -2;
+	if (!l->content || !*((char*)l->content))
+	{
+		r = read(fd, b, BUFF_SIZE);
+		if (r <= 0 || !(l->content = ft_strsub(b, 0, r)))
+			return (!r ? 0 : -1);
+	}
 	while (r && (p = find_n(l->content, ft_strlen(l->content))) == -1)
 	{
 		r = read(fd, b, BUFF_SIZE);
-		if (r == -1 || !(t = ft_strsub(b, 0, r)))
-		{
-			free(l->content);
-			l->conyent = NULL;
+		if (r == -1 || !(t[0] = ft_strsub(b, 0, r)))
 			return (-1);
-		}
-		t2 = l->content;
-		l->content = ft_strjoin((l->content), t);
-		free(t);
-		free(t2);
+		t[1] = l->content;
+		l->content = ft_strjoin((l->content), t[0]);
+		free(t[0]);
+		free(t[1]);
 		if (!l->content)
 			return (-1);
 	}
@@ -113,16 +110,17 @@ int		get_next_line(const int fd, char **line)
 		return (-1);
 	if (!(b = (char*)ft_memalloc(BUFF_SIZE + 1)))
 		return (-1);
-	if (!l->content || !*((char*)l->content))
+	if ((r = read_str(fd, l, line, b)) == -1)
 	{
-		r = read(fd, b, BUFF_SIZE);
-		if (r <= 0 || !(l->content = ft_strsub(b, 0, r)))
+		while (lst)
 		{
-			free(b);
-			return (!r ? 0 : -1);
+			l = lst;
+			free(lst->content);
+			lst->content = NULL;
+			lst = lst->next;
+			free(l);
 		}
 	}
-	r = read_str(fd, l, line, b);
 	free(b);
 	return (r);
 }
