@@ -85,10 +85,13 @@ int		read_str(int fd, t_list *l, char **line, char *b)
 	r = -2;
 	while (r && (p = find_n(l->content, ft_strlen(l->content))) == -1)
 	{
-		if ((r = read(fd, b, BUFF_SIZE)) == -1)
+		r = read(fd, b, BUFF_SIZE);
+		if (r == -1 || !(t = ft_strsub(b, 0, r)))
+		{
+			free(l->content);
+			l->conyent = NULL;
 			return (-1);
-		if (!(t = ft_strsub(b, 0, r)))
-			return (-1);
+		}
 		t2 = l->content;
 		l->content = ft_strjoin((l->content), t);
 		free(t);
